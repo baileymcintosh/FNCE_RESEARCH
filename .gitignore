@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+dist/
+build/
+*.pyo
+*.pyd
+
+# Environment / credentials
+.env
+*.env
+
+# Data (large files; licensing prohibits redistribution — pull from WRDS on demand)
+/data/raw/
+/data/processed/
+
+# Keep hand-curated files (event dates, firm lists, etc.)
+!/data/manual/
+
+# Jupyter checkpoints and scratch notebooks
+.ipynb_checkpoints/
+/notebooks/archive/
+/notebooks/eda/
+
+# Results — commit selectively per paper
+/results/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+.idea/
