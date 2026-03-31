@@ -24,6 +24,7 @@ for _d in [DATA_RAW, DATA_PROC, DATA_MANUAL, RESULTS_DIR / "tables", RESULTS_DIR
 
 # --- WRDS ---
 WRDS_USERNAME: str | None = os.getenv("WRDS_USERNAME")
+WRDS_PASSWORD: str | None = os.getenv("WRDS_PASSWORD")
 
 # --- Sample period defaults ---
 SAMPLE_START = "1963-07-01"   # standard start for CRSP anomaly tests (post-COMPUSTAT merge)

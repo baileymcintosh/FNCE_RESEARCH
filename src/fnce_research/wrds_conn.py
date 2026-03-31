@@ -1,47 +1,79 @@
 """
-WRDS connection factory — module-level singleton.
+WRDS connection — direct PostgreSQL, no SSH tunnel, no interactive prompts.
+
+Credentials come from .env (WRDS_USERNAME + WRDS_PASSWORD).
+Returns a singleton sqlalchemy engine; all data functions use db.raw_sql()
+which accepts the engine directly.
 
 Usage:
-    from fnce_research.wrds_conn import get_db, close_db
+    from fnce_research.wrds_conn import get_db, query, close_db
 
-    db = get_db()                          # connects (or reuses existing connection)
-    df = db.raw_sql("SELECT ...")
-    close_db()                             # call when done (e.g. at end of script)
+    # Option A — use the wrds-style raw_sql wrapper (same API as before)
+    df = query("SELECT permno, date, ret FROM crsp.msf LIMIT 10")
 
-The singleton avoids renegotiating the SSH tunnel on every query, which matters
-in notebooks where each cell may call a data function independently.
+    # Option B — use the engine directly with pandas
+    import pandas as pd
+    df = pd.read_sql("SELECT ...", get_db())
 """
-import wrds
-from fnce_research.config import WRDS_USERNAME
+import pandas as pd
+import sqlalchemy
+from fnce_research.config import WRDS_USERNAME, WRDS_PASSWORD
 
-_db: wrds.Connection | None = None
+_engine: sqlalchemy.engine.Engine | None = None
+
+WRDS_HOST = "wrds-pgdata.wharton.upenn.edu"
+WRDS_PORT = 9737
+WRDS_DB   = "wrds"
 
 
-def get_db() -> wrds.Connection:
-    """Return the active WRDS connection, creating one if necessary."""
-    global _db
-    if _db is None or _is_closed(_db):
-        if not WRDS_USERNAME:
+def get_db() -> sqlalchemy.engine.Engine:
+    """Return the active SQLAlchemy engine, creating one if necessary."""
+    global _engine
+    if _engine is None:
+        if not WRDS_USERNAME or not WRDS_PASSWORD:
             raise EnvironmentError(
-                "WRDS_USERNAME is not set. Add it to your .env file or environment."
+                "WRDS_USERNAME and WRDS_PASSWORD must be set in your .env file."
             )
-        _db = wrds.Connection(wrds_username=WRDS_USERNAME)
-    return _db
+        url = sqlalchemy.engine.URL.create(
+            drivername="postgresql+psycopg2",
+            username=WRDS_USERNAME,
+            password=WRDS_PASSWORD,
+            host=WRDS_HOST,
+            port=WRDS_PORT,
+            database=WRDS_DB,
+        )
+        _engine = sqlalchemy.create_engine(
+            url,
+            connect_args={"sslmode": "require"},
+            pool_pre_ping=True,   # reconnects automatically if connection drops
+        )
+    return _engine
+
+
+def query(sql: str, date_cols: list[str] | None = None) -> pd.DataFrame:
+    """
+    Run a SQL query against WRDS and return a DataFrame.
+
+    Parameters
+    ----------
+    sql       : SQL string (use %s-style params or f-strings for dynamic queries)
+    date_cols : column names to parse as datetime
+
+    Examples
+    --------
+    df = query("SELECT permno, date, ret FROM crsp.msf WHERE date = '2023-12-29'")
+    """
+    df = pd.read_sql(sql, get_db())
+    if date_cols:
+        for col in date_cols:
+            if col in df.columns:
+                df[col] = pd.to_datetime(df[col])
+    return df
 
 
 def close_db() -> None:
-    """Close the active connection and reset the singleton."""
-    global _db
-    if _db is not None:
-        try:
-            _db.close()
-        except Exception:
-            pass
-        _db = None
-
-
-def _is_closed(conn: wrds.Connection) -> bool:
-    try:
-        return conn.connection is None or conn.connection.closed != 0
-    except Exception:
-        return True
+    """Dispose the connection pool."""
+    global _engine
+    if _engine is not None:
+        _engine.dispose()
+        _engine = None

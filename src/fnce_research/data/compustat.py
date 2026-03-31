@@ -1,16 +1,14 @@
 """
 Compustat fundamentals pulls (comp.funda, comp.fundq, comp.company).
 
-Same cache-first pattern as crsp.py.
 Variable names follow Compustat mnemonics (at, ceq, ni, etc.) so they match
 the Compustat data guide directly.
 """
 import pandas as pd
-from fnce_research.wrds_conn import get_db
+from fnce_research.wrds_conn import query
 from fnce_research.data import cache
 
 
-# Core annual variables — extend as needed for your project
 _FUNDA_COLS = """
     gvkey, datadate, fyear, fyr,
     at, lt, ceq, seq, txditc,
@@ -27,13 +25,13 @@ _FUNDA_COLS = """
 def load_funda(start_yr: int = 1963, end_yr: int = 2023, force: bool = False) -> pd.DataFrame:
     """
     Compustat Annual Fundamentals (comp.funda).
-    Filtered to industrial format, standard consolidation (industry standard).
+    Filtered to industrial format, standard consolidation.
     """
     if not force and cache.exists("comp", "funda", start_yr, end_yr):
         return cache.read("comp", "funda", start_yr, end_yr)
 
     print(f"Pulling Compustat funda {start_yr}-{end_yr} from WRDS...")
-    df = get_db().raw_sql(f"""
+    df = query(f"""
         SELECT {_FUNDA_COLS}
         FROM comp.funda
         WHERE datadate BETWEEN '{start_yr}-01-01' AND '{end_yr}-12-31'
@@ -65,7 +63,7 @@ def load_fundq(start_yr: int = 1963, end_yr: int = 2023, force: bool = False) ->
         return cache.read("comp", "fundq", start_yr, end_yr)
 
     print(f"Pulling Compustat fundq {start_yr}-{end_yr} from WRDS...")
-    df = get_db().raw_sql(f"""
+    df = query(f"""
         SELECT {_FUNDQ_COLS}
         FROM comp.fundq
         WHERE datadate BETWEEN '{start_yr}-01-01' AND '{end_yr}-12-31'
@@ -87,7 +85,7 @@ def load_company(force: bool = False) -> pd.DataFrame:
         return cache.read("comp", "company", 0, 0)
 
     print("Pulling Compustat company from WRDS...")
-    df = get_db().raw_sql("""
+    df = query("""
         SELECT gvkey, conm, tic, cusip, cik,
                sic, naics, state, loc, exchg,
                fyr, costat
