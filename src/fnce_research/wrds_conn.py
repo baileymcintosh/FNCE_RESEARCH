@@ -38,11 +38,13 @@ def connect() -> None:
         raise EnvironmentError(
             "WRDS_USERNAME and WRDS_PASSWORD must be set in your .env file."
         )
-    print("Connecting to WRDS... (approve the Duo push on your phone if prompted)")
+    print("Connecting to WRDS...")
     _db = wrds.Connection(
         wrds_username=WRDS_USERNAME,
         wrds_password=WRDS_PASSWORD,
+        autoconnect=False,   # skip the slow load_library_list() call
     )
+    _db.connect()
     print("Connected.")
 
 
