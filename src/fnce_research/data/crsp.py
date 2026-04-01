@@ -6,7 +6,7 @@ Raw pulls are intentionally minimal — no joins, no business logic — so the c
 faithfully mirrors the WRDS source.
 """
 import pandas as pd
-from fnce_research.wrds_conn import query
+from fnce_research.wrds_conn import query  # connect() must be called before any of these
 from fnce_research.data import cache
 
 

@@ -5,7 +5,7 @@ Variable names follow Compustat mnemonics (at, ceq, ni, etc.) so they match
 the Compustat data guide directly.
 """
 import pandas as pd
-from fnce_research.wrds_conn import query
+from fnce_research.wrds_conn import query  # connect() must be called before any of these
 from fnce_research.data import cache
 
 

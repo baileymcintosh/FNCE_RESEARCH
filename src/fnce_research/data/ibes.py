@@ -8,7 +8,7 @@ Key tables:
 All pulls are cache-first.
 """
 import pandas as pd
-from fnce_research.wrds_conn import query
+from fnce_research.wrds_conn import query  # connect() must be called before any of these
 from fnce_research.data import cache
 
 
