@@ -25,7 +25,7 @@ def load_statsumu(start_yr: int = 1976, end_yr: int = 2023, force: bool = False)
         SELECT ticker, cusip, statpers, fiscalp, fpi,
                meanest, medest, stdev, numest,
                anndats_act, actual
-        FROM ibes.statsumu
+        FROM ibes.statsumu_epsus
         WHERE statpers BETWEEN '{start_yr}-01-01' AND '{end_yr}-12-31'
           AND fpi IN ('1', '2', '3', '4')
           AND fiscalp = 'QTR'
